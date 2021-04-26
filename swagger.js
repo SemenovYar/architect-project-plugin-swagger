@@ -73,24 +73,27 @@ function createTypeForArray({ field, schema, typesMap, overrideFieldTypesMap }) 
 }
 
 function createTypeByTypeMap({ field, schema, typesMap, overrideFieldTypesMap }) {
-  let type = schema.type;
-  const isObject = schema['$ref'] || schema['properties'] || schema['allOf'] || schema['oneOf'] || schema['anyOf'];
-  const isArray = schema.type === 'array';
-  const isEnum = schema['enum'];
-  type = isObject ? 'object' : type;
-  type = isEnum ? 'enum' : type;
+  if(schema){
+    let type = schema.type;
+    const isObject = schema['$ref'] || schema['properties'] || schema['allOf'] || schema['oneOf'] || schema['anyOf'];
+    const isArray = schema.type === 'array';
+    const isEnum = schema['enum'];
+    type = isObject ? 'object' : type;
+    type = isEnum ? 'enum' : type;
 
-  if (field && overrideFieldTypesMap[field]) {
-    return overrideFieldTypesMap[field];
+    if (field && overrideFieldTypesMap[field]) {
+      return overrideFieldTypesMap[field];
+    }
+
+    const noHandler = !isArray && !isObject && !isEnum;
+    const schemaHasOnlyType = schema.type && Object.keys(schema).length === 1;
+    if (schemaHasOnlyType || noHandler) {
+      return typesMap[schema.type] || typesMap['*'];
+    }
+
+    return typeCreatorMap[type]({ schema, typesMap, overrideFieldTypesMap });
   }
 
-  const noHandler = !isArray && !isObject && !isEnum;
-  const schemaHasOnlyType = schema.type && Object.keys(schema).length === 1;
-  if (schemaHasOnlyType || noHandler) {
-    return typesMap[schema.type] || typesMap['*'];
-  }
-
-  return typeCreatorMap[type]({ schema, typesMap, overrideFieldTypesMap });
 }
 
 function createTypesFromSchemesBySwaggerSpec({ swaggerSpec, typesMap, overrideFieldTypesMap }) {
@@ -114,9 +117,16 @@ const createTypesForRequestMethod = ({ method, URLGetterName, methodInfo, typesM
 
   let fieldsPath = [];
   let fieldsQuery = [];
+  let fieldsHeader = [];
+  let fieldsFormData = [];
+  let fieldsBody = [];
+
   const fieldsMap = {
     query: fieldsQuery,
     path: fieldsPath,
+    header: fieldsHeader,
+    formData: fieldsFormData,
+    body: fieldsBody,
   };
 
   if (methodInfo.parameters) {
