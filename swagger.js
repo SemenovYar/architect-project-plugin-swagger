@@ -130,7 +130,15 @@ const createTypesForRequestMethod = ({ method, URLGetterName, methodInfo, typesM
   }
 
   if (methodInfo.requestBody) {
-    const schema = methodInfo.requestBody.content['application/json'].schema;
+
+    let schema;
+
+    if (methodInfo.requestBody.content) {
+      schema = methodInfo.requestBody.content['application/json'].schema;
+    } else if (methodInfo.requestBody['$ref']) {
+      schema = {['$ref']: methodInfo.requestBody['$ref']};
+    }
+
     const type = createTypeByTypeMap({ schema, typesMap, overrideFieldTypesMap });
     let typeName = toCamelCase([URLGetterName, 'data', 'params']);
     result.data = `export type ${typeName} = ${type}`;
