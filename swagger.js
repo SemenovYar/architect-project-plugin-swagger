@@ -306,3 +306,5 @@ module.exports = {
   createEndpointsBySwaggerSpec,
   createTypesFromSchemesBySwaggerSpec,
 };
+
+const info = 'info'
